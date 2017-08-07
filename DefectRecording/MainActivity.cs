@@ -8,6 +8,9 @@ using Android.Provider;
 using System.Collections.Generic;
 using Android.Content.PM;
 using SQLite;
+using EntityFramework;
+using Microsoft.EntityFrameworkCore;
+using EntityFramework.Models;
 
 namespace DefectRecording
 {
@@ -15,9 +18,10 @@ namespace DefectRecording
     public class MainActivity : Activity
     {
         ImageView _imageView;
-        SQLiteConnection db;
+        //SQLiteConnection db;
+        DefectContext db;
 
-        protected override void OnCreate(Bundle bundle)
+        protected override async void OnCreate(Bundle bundle)
         {
             base.OnCreate(bundle);
             SetContentView(Resource.Layout.Main);
@@ -37,21 +41,29 @@ namespace DefectRecording
             var docFolder1 = "/sdcard/Android/data/DefectRecording/";
             var docFolder2 = "files/";
             var docsFolder = docFolder1 + docFolder2;
-            CreateDirectoryForDatabase(docFolder1,docFolder2);
+            CreateDirectoryForDatabase(docFolder1, docFolder2);
 
             var pathToDatabase = System.IO.Path.Combine(docsFolder, "db_adonet.db");
-            db = new SQLiteConnection(pathToDatabase);
-            db.CreateTable<Defect>();
 
+            try
+            {
+                db = new DefectContext(pathToDatabase);
+                await db.Database.MigrateAsync(); //We need to ensure the latest Migration was added. This is different than EnsureDatabaseCreated.
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
         }
 
         private void SavetoDB(object sender, EventArgs e)
         {
             EditText editText1 = FindViewById<EditText>(Resource.Id.editText1);
-            var newDefect = new Defect();
+            Defect newDefect = new Defect();
             newDefect.ImgName = App._file.ToString();
             newDefect.Description = editText1.Text;
-            db.Insert(newDefect);
+            db.Defects.Add(newDefect);
+            db.SaveChanges();
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -126,18 +138,7 @@ namespace DefectRecording
         }
     }
 
-    [Table("Defects")]
-    public class Defect
-    {
-        [PrimaryKey, AutoIncrement, Column("_id")]
-        public int Id { get; set; }
-
-        [MaxLength(500)]
-        public string ImgName { get; set; }
-
-        [MaxLength(500)]
-        public string Description { get; set; }
-    }
+  
 }
 
 
