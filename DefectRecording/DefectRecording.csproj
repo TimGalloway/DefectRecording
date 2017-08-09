@@ -108,6 +108,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitmapHelpers.cs" />
+    <Compile Include="Gallery\IMediaService.cs" />
+    <Compile Include="Gallery\MediaService.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="MainApplication.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
