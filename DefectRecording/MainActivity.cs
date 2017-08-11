@@ -4,82 +4,65 @@ using Android.OS;
 using Android.Graphics;
 using System;
 using Android.Content;
-using Android.Provider;
-using System.Collections.Generic;
-using Android.Content.PM;
-using SQLite;
+using System.Threading.Tasks;
+using System.Net;
+using System.IO;
+using Newtonsoft.Json;
+using System.Net.Http;
+using System.Text;
 
 namespace DefectRecording
 {
     [Activity(Label = "DefectRecording", MainLauncher = true, Icon = "@drawable/dr")]
     public class MainActivity : Activity
     {
-        ImageView _imageView;
-        SQLiteConnection db;
-
         protected override void OnCreate(Bundle bundle)
         {
             base.OnCreate(bundle);
             SetContentView(Resource.Layout.Main);
 
-            if (IsThereAnAppToTakePictures())
-            {
-                CreateDirectoryForPictures("/sdcard/Android/data/DefectRecording/", "pics");
-
-                Button button = FindViewById<Button>(Resource.Id.myButton);
-                _imageView = FindViewById<ImageView>(Resource.Id.imageView1);
-                button.Click += TakeAPicture;
-
-                Button button1 = FindViewById<Button>(Resource.Id.button1);
-                button1.Click += SavetoDB;
-
-            }
-            var docFolder1 = "/sdcard/Android/data/DefectRecording/";
-            var docFolder2 = "files/";
-            var docsFolder = docFolder1 + docFolder2;
-            CreateDirectoryForDatabase(docFolder1,docFolder2);
-
-            var pathToDatabase = System.IO.Path.Combine(docsFolder, "db_adonet.db");
-            db = new SQLiteConnection(pathToDatabase);
-            db.CreateTable<Defect>();
-
+            Button button1 = FindViewById<Button>(Resource.Id.button1);
+            button1.Click += SendToServerAsync;
         }
 
-        private void SavetoDB(object sender, EventArgs e)
+        private async void SendToServerAsync(object sender, EventArgs e)
         {
-            EditText editText1 = FindViewById<EditText>(Resource.Id.editText1);
-            var newDefect = new Defect();
-            newDefect.ImgName = App._file.ToString();
-            newDefect.Description = editText1.Text;
-            db.Insert(newDefect);
+            EditText Location = FindViewById<EditText>(Resource.Id.Location);
+            EditText Description = FindViewById<EditText>(Resource.Id.Description);
+
+            // Do the post to server
+            Defect newDefect = new Defect();
+            newDefect.location = Location.Text;
+            newDefect.description = Description.Text;
+
+            HttpClient client;
+
+            client = new HttpClient();
+            client.MaxResponseContentBufferSize = 256000;
+
+            String restURL = "http://gallowayconsulting.no-ip.org:3000/defects/";
+            Uri uri = new Uri(string.Format(restURL, string.Empty));
+
+            var json = JsonConvert.SerializeObject(newDefect);
+            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+            content.Headers.Allow.Add("application/json");
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+            HttpResponseMessage response = null;
+            response = await client.PostAsync(uri, content);
+
+            response.EnsureSuccessStatusCode();
+
+            if (response.IsSuccessStatusCode)
+            {
+                Location.Text = "";
+                Description.Text = "";
+            }
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
-
-            // Make it available in the gallery
-
-            Intent mediaScanIntent = new Intent(Intent.ActionMediaScannerScanFile);
-            Android.Net.Uri contentUri = Android.Net.Uri.FromFile(App._file);
-            mediaScanIntent.SetData(contentUri);
-            SendBroadcast(mediaScanIntent);
-
-            // Display in ImageView. We will resize the bitmap to fit the display.
-            // Loading the full sized image will consume to much memory
-            // and cause the application to crash.
-
-            int height = Resources.DisplayMetrics.HeightPixels;
-            int width = _imageView.Height;
-            App.bitmap = App._file.Path.LoadAndResizeBitmap(width, height);
-            if (App.bitmap != null)
-            {
-                _imageView.SetImageBitmap(App.bitmap);
-                App.bitmap = null;
-            }
-
-            // Dispose of the Java side bitmap.
-            GC.Collect();
         }
 
         public static class App
@@ -89,55 +72,5 @@ namespace DefectRecording
             public static Bitmap bitmap;
         }
 
-        private void CreateDirectoryForPictures(String file1, String file2)
-        {
-            //App._dir = new Java.IO.File(
-            //    Android.OS.Environment.GetExternalStoragePublicDirectory(
-            //        Android.OS.Environment.DirectoryPictures), "CameraAppDemo");
-            App._dir = new Java.IO.File(file1,file2);
-            if (!App._dir.Exists())
-            {
-                App._dir.Mkdirs();
-            }
-        }
-
-        private void CreateDirectoryForDatabase(String file1, String file2)
-        {
-            Java.IO.File ldir = new Java.IO.File(file1,file2);
-            if (!ldir.Exists())
-            {
-                ldir.Mkdirs();
-            }
-        }
-        private bool IsThereAnAppToTakePictures()
-        {
-            Intent intent = new Intent(MediaStore.ActionImageCapture);
-            IList<ResolveInfo> availableActivities =
-                PackageManager.QueryIntentActivities(intent, PackageInfoFlags.MatchDefaultOnly);
-            return availableActivities != null && availableActivities.Count > 0;
-        }
-
-        private void TakeAPicture(object sender, EventArgs eventArgs)
-        {
-            Intent intent = new Intent(MediaStore.ActionImageCapture);
-            App._file = new Java.IO.File(App._dir, String.Format("myPhoto_{0}.jpg", Guid.NewGuid()));
-            intent.PutExtra(MediaStore.ExtraOutput, Android.Net.Uri.FromFile(App._file));
-            StartActivityForResult(intent, 0);
-        }
-    }
-
-    [Table("Defects")]
-    public class Defect
-    {
-        [PrimaryKey, AutoIncrement, Column("_id")]
-        public int Id { get; set; }
-
-        [MaxLength(500)]
-        public string ImgName { get; set; }
-
-        [MaxLength(500)]
-        public string Description { get; set; }
     }
 }
-
-
