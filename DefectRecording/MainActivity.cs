@@ -10,6 +10,7 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Net.Http;
 using System.Text;
+using RestSharp;
 
 namespace DefectRecording
 {
@@ -22,10 +23,10 @@ namespace DefectRecording
             SetContentView(Resource.Layout.Main);
 
             Button button1 = FindViewById<Button>(Resource.Id.button1);
-            button1.Click += SendToServerAsync;
+            button1.Click += SendToServer;
         }
 
-        private async void SendToServerAsync(object sender, EventArgs e)
+        private void SendToServer(object sender, EventArgs e)
         {
             EditText Location = FindViewById<EditText>(Resource.Id.Location);
             EditText Description = FindViewById<EditText>(Resource.Id.Description);
@@ -35,29 +36,37 @@ namespace DefectRecording
             newDefect.location = Location.Text;
             newDefect.description = Description.Text;
 
-            HttpClient client;
+            var client = new RestClient("http://localhost:58385");
 
-            client = new HttpClient();
-            client.MaxResponseContentBufferSize = 256000;
+            var request = new RestRequest("api/Defects", Method.POST);
+            request.AddParameter("Location", newDefect.location);
+            request.AddParameter("Description", newDefect.description);
 
-            String restURL = "http://gallowayconsulting.no-ip.org:3000/defects/";
-            Uri uri = new Uri(string.Format(restURL, string.Empty));
+            IRestResponse response = client.Execute(request);
 
-            var json = JsonConvert.SerializeObject(newDefect);
-            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-            content.Headers.Allow.Add("application/json");
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            //HttpClient client;
 
-            HttpResponseMessage response = null;
-            response = await client.PostAsync(uri, content);
+            //client = new HttpClient();
+            //client.MaxResponseContentBufferSize = 256000;
 
-            response.EnsureSuccessStatusCode();
+            //String restURL = "http://gallowayconsulting.no-ip.org:3000/defects/";
+            //Uri uri = new Uri(string.Format(restURL, string.Empty));
 
-            if (response.IsSuccessStatusCode)
-            {
-                Location.Text = "";
-                Description.Text = "";
-            }
+            //var json = JsonConvert.SerializeObject(newDefect);
+            //StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+            //content.Headers.Allow.Add("application/json");
+            //content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+            //HttpResponseMessage response = null;
+            //response = await client.PostAsync(uri, content);
+
+            //response.EnsureSuccessStatusCode();
+
+            //if (response.IsSuccessStatusCode)
+            //{
+            //    Location.Text = "";
+            //    Description.Text = "";
+            //}
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
