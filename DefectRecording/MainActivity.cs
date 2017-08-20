@@ -97,11 +97,11 @@ namespace DefectRecording
 
             //response.EnsureSuccessStatusCode();
 
-            //if (response.IsSuccessStatusCode)
-            //{
-            //    Location.Text = "";
-            //    Description.Text = "";
-            //}
+            if (response.ErrorException == null)
+            {
+                Location.Text = "";
+                Description.Text = "";
+            }
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
