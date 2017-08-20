@@ -32,40 +32,12 @@ namespace DefectRecording
             {
                 CreateDirectoryForPictures("/sdcard/Android/data/DefectRecording/", "pics");
 
-                Button button = FindViewById<Button>(Resource.Id.myButton);
+                Button button = FindViewById<Button>(Resource.Id.btnOpenCamera);
                 _imageView = FindViewById<ImageView>(Resource.Id.imageView1);
                 button.Click += TakeAPicture;
             }
-            Button button1 = FindViewById<Button>(Resource.Id.button1);
+            Button button1 = FindViewById<Button>(Resource.Id.btnSave);
             button1.Click += SendToServer;
-        }
-
-        private void CreateDirectoryForPictures(String file1, String file2)
-        {
-            //App._dir = new Java.IO.File(
-            //    Android.OS.Environment.GetExternalStoragePublicDirectory(
-            //        Android.OS.Environment.DirectoryPictures), "CameraAppDemo");
-            App._dir = new Java.IO.File(file1, file2);
-            if (!App._dir.Exists())
-            {
-                App._dir.Mkdirs();
-            }
-        }
-
-        private bool IsThereAnAppToTakePictures()
-        {
-            Intent intent = new Intent(MediaStore.ActionImageCapture);
-            IList<ResolveInfo> availableActivities =
-                PackageManager.QueryIntentActivities(intent, PackageInfoFlags.MatchDefaultOnly);
-            return availableActivities != null && availableActivities.Count > 0;
-        }
-
-        private void TakeAPicture(object sender, EventArgs eventArgs)
-        {
-            Intent intent = new Intent(MediaStore.ActionImageCapture);
-            App._file = new Java.IO.File(App._dir, String.Format("myPhoto_{0}.jpg", Guid.NewGuid()));
-            intent.PutExtra(MediaStore.ExtraOutput, Android.Net.Uri.FromFile(App._file));
-            StartActivityForResult(intent, 0);
         }
 
         private void SendToServer(object sender, EventArgs e)
