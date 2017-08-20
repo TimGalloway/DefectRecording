@@ -79,10 +79,19 @@ namespace DefectRecording
 			public const int button1 = 2131034118;
 			
 			// aapt resource value: 0x7f050001
-			public const int imageView1 = 2131034113;
+			public const int Location = 2131034113;
 			
 			// aapt resource value: 0x7f050000
-			public const int myButton = 2131034112;
+			public const int LocationLabel = 2131034112;
+			
+			// aapt resource value: 0x7f050004
+			public const int btnOpenCamera = 2131034116;
+			
+			// aapt resource value: 0x7f050006
+			public const int btnSave = 2131034118;
+			
+			// aapt resource value: 0x7f050005
+			public const int imageView1 = 2131034117;
 			
 			static Id()
 			{
