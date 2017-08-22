@@ -4,10 +4,17 @@ using Android.OS;
 using Android.Graphics;
 using System;
 using Android.Content;
+using System.Threading.Tasks;
+using System.Net;
+using System.IO;
+using Newtonsoft.Json;
+using System.Net.Http;
+using System.Text;
+using System.Net.Http.Headers;
+using RestSharp;
 using Android.Provider;
 using System.Collections.Generic;
 using Android.Content.PM;
-using SQLite;
 
 namespace DefectRecording
 {
@@ -15,7 +22,6 @@ namespace DefectRecording
     public class MainActivity : Activity
     {
         ImageView _imageView;
-        SQLiteConnection db;
 
         protected override void OnCreate(Bundle bundle)
         {
@@ -26,32 +32,47 @@ namespace DefectRecording
             {
                 CreateDirectoryForPictures("/sdcard/Android/data/DefectRecording/", "pics");
 
-                Button button = FindViewById<Button>(Resource.Id.myButton);
+                Button button = FindViewById<Button>(Resource.Id.btnOpenCamera);
                 _imageView = FindViewById<ImageView>(Resource.Id.imageView1);
                 button.Click += TakeAPicture;
-
-                Button button1 = FindViewById<Button>(Resource.Id.button1);
-                button1.Click += SavetoDB;
-
             }
-            var docFolder1 = "/sdcard/Android/data/DefectRecording/";
-            var docFolder2 = "files/";
-            var docsFolder = docFolder1 + docFolder2;
-            CreateDirectoryForDatabase(docFolder1,docFolder2);
-
-            var pathToDatabase = System.IO.Path.Combine(docsFolder, "db_adonet.db");
-            db = new SQLiteConnection(pathToDatabase);
-            db.CreateTable<Defect>();
-
+            Button button1 = FindViewById<Button>(Resource.Id.btnSave);
+            button1.Click += SendToServer;
         }
 
-        private void SavetoDB(object sender, EventArgs e)
+        private void SendToServer(object sender, EventArgs e)
         {
-            EditText editText1 = FindViewById<EditText>(Resource.Id.editText1);
-            var newDefect = new Defect();
-            newDefect.ImgName = App._file.ToString();
-            newDefect.Description = editText1.Text;
-            db.Insert(newDefect);
+            EditText Location = FindViewById<EditText>(Resource.Id.Location);
+            EditText Description = FindViewById<EditText>(Resource.Id.Description);
+            Button button1 = FindViewById<Button>(Resource.Id.btnSave);
+
+            button1.Text = "Saving";
+
+            byte[] b = System.IO.File.ReadAllBytes(App._file.ToString());
+            String b64String = Convert.ToBase64String(b);
+
+            // Do the post to server
+            Defect newDefect = new Defect();
+            newDefect.location = Location.Text;
+            newDefect.description = Description.Text;
+            newDefect.ImageName = App.filename;
+            newDefect.ImageBase64 = b64String;
+
+            var client = new RestClient("http://ec2-52-34-120-128.us-west-2.compute.amazonaws.com");
+            var request = new RestRequest("api/Defects", Method.POST);
+            request.AddObject(newDefect);
+
+            IRestResponse response = client.Execute(request);
+
+            var content = response.Content; // raw content as string
+
+            if (response.ErrorException == null)
+            {
+                Location.Text = "";
+                Description.Text = "";
+                _imageView.SetImageDrawable(null);
+                button1.Text = "Save";
+            }
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -71,7 +92,7 @@ namespace DefectRecording
 
             int height = Resources.DisplayMetrics.HeightPixels;
             int width = _imageView.Height;
-            App.bitmap = App._file.Path.LoadAndResizeBitmap(width, height);
+            App.bitmap = App._file.Path.LoadAndResizeBitmap(width / 3, height / 3);
             if (App.bitmap != null)
             {
                 _imageView.SetImageBitmap(App.bitmap);
@@ -87,28 +108,18 @@ namespace DefectRecording
             public static Java.IO.File _file;
             public static Java.IO.File _dir;
             public static Bitmap bitmap;
+            public static String filename;
         }
 
         private void CreateDirectoryForPictures(String file1, String file2)
         {
-            //App._dir = new Java.IO.File(
-            //    Android.OS.Environment.GetExternalStoragePublicDirectory(
-            //        Android.OS.Environment.DirectoryPictures), "CameraAppDemo");
-            App._dir = new Java.IO.File(file1,file2);
+            App._dir = new Java.IO.File(file1, file2);
             if (!App._dir.Exists())
             {
                 App._dir.Mkdirs();
             }
         }
 
-        private void CreateDirectoryForDatabase(String file1, String file2)
-        {
-            Java.IO.File ldir = new Java.IO.File(file1,file2);
-            if (!ldir.Exists())
-            {
-                ldir.Mkdirs();
-            }
-        }
         private bool IsThereAnAppToTakePictures()
         {
             Intent intent = new Intent(MediaStore.ActionImageCapture);
@@ -120,24 +131,11 @@ namespace DefectRecording
         private void TakeAPicture(object sender, EventArgs eventArgs)
         {
             Intent intent = new Intent(MediaStore.ActionImageCapture);
-            App._file = new Java.IO.File(App._dir, String.Format("myPhoto_{0}.jpg", Guid.NewGuid()));
+            var guid = Guid.NewGuid();
+            App.filename = String.Format("myPhoto_{0}.jpg", guid);
+            App._file = new Java.IO.File(App._dir, String.Format("myPhoto_{0}.jpg", guid));
             intent.PutExtra(MediaStore.ExtraOutput, Android.Net.Uri.FromFile(App._file));
             StartActivityForResult(intent, 0);
         }
     }
-
-    [Table("Defects")]
-    public class Defect
-    {
-        [PrimaryKey, AutoIncrement, Column("_id")]
-        public int Id { get; set; }
-
-        [MaxLength(500)]
-        public string ImgName { get; set; }
-
-        [MaxLength(500)]
-        public string Description { get; set; }
-    }
 }
-
-
