@@ -53,13 +53,15 @@ namespace DefectRecording
 
             // Do the post to server
             Defect newDefect = new Defect();
-            newDefect.location = Location.Text;
-            newDefect.description = Description.Text;
+            newDefect.Location = Location.Text;
+            newDefect.Description = Description.Text;
             newDefect.ImageName = App.filename;
             newDefect.ImageBase64 = b64String;
 
-            var client = new RestClient("http://ec2-52-34-120-128.us-west-2.compute.amazonaws.com");
-            var request = new RestRequest("api/Defects", Method.POST);
+            //var client = new RestClient("http://ec2-52-34-120-128.us-west-2.compute.amazonaws.com");
+            //var request = new RestRequest("api/Defects", Method.POST);
+            var client = new RestClient("http://gallowayconsulting.no-ip.org:3000/");
+            var request = new RestRequest("defects", Method.POST);
             request.AddObject(newDefect);
 
             IRestResponse response = client.Execute(request);
