@@ -53,8 +53,8 @@ namespace DefectRecording
 
             // Do the post to server
             Defect newDefect = new Defect();
-            newDefect.location = Location.Text;
-            newDefect.description = Description.Text;
+            newDefect.Location = Location.Text;
+            newDefect.Description = Description.Text;
             newDefect.ImageName = App.filename;
             newDefect.ImageBase64 = b64String;
 
