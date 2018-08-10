@@ -60,7 +60,8 @@ namespace DefectRecording
 
             //var client = new RestClient("http://ec2-52-34-120-128.us-west-2.compute.amazonaws.com");
             //var request = new RestRequest("api/Defects", Method.POST);
-            var client = new RestClient("http://defectrecording.herokuapp.com/");
+            //var client = new RestClient("http://defectrecording.herokuapp.com/");
+            var client = new RestClient("http://gallowayconsulting.no-ip.org:3000/");
             var request = new RestRequest("defects", Method.POST);
             request.AddObject(newDefect);
 
