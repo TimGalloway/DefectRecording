@@ -58,23 +58,54 @@ namespace DefectRecording
             newDefect.ImageName = App.filename;
             newDefect.ImageBase64 = b64String;
 
-            //var client = new RestClient("http://ec2-52-34-120-128.us-west-2.compute.amazonaws.com");
-            //var request = new RestRequest("api/Defects", Method.POST);
-            //var client = new RestClient("http://defectrecording.herokuapp.com/");
-            var client = new RestClient("http://gallowayconsulting.no-ip.org:3000/");
-            var request = new RestRequest("defects", Method.POST);
-            request.AddObject(newDefect);
+            ////var client = new RestClient("http://ec2-52-34-120-128.us-west-2.compute.amazonaws.com");
+            ////var request = new RestRequest("api/Defects", Method.POST);
+            ////var client = new RestClient("http://defectrecording.herokuapp.com/");
+            //var client = new RestClient("http://gallowayconsulting.no-ip.org/Defects/");
+            //var request = new RestRequest("defects", Method.POST);
+            //request.AddObject(newDefect);
 
-            IRestResponse response = client.Execute(request);
+            //IRestResponse response = client.Execute(request);
 
-            var content = response.Content; // raw content as string
+            //var content = response.Content; // raw content as string
 
-            if (response.ErrorException == null)
+            //if (response.ErrorException == null)
+            //{
+            //    Location.Text = "";
+            //    Description.Text = "";
+            //    _imageView.SetImageDrawable(null);
+            //    button1.Text = "Save";
+            //}
+
+            SendToServerAsync(newDefect);
+
+        }
+
+        private async void SendToServerAsync(Defect newDefect)
+        {
+            try
             {
-                Location.Text = "";
-                Description.Text = "";
-                _imageView.SetImageDrawable(null);
-                button1.Text = "Save";
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("http://gallowayconsulting.no-ip.org/Defects");
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("applicaion/json"));
+                    var uri = new Uri("http://gallowayconsulting.no-ip.org/Defects/");
+                    string serializedObject = JsonConvert.SerializeObject(newDefect);
+                    HttpContent contentPost = new StringContent(serializedObject, System.Text.Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = await client.PostAsync(uri, contentPost);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var data = await response.Content.ReadAsStringAsync();
+                        Defect retDefect = JsonConvert.DeserializeObject<Defect>(data);
+                        //return rettrafficEvent;
+                    }
+
+                }
+            }
+            catch (Exception)
+            {
+                //return null
             }
         }
 
